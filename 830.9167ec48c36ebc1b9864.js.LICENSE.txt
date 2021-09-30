@@ -1,0 +1,88 @@
+/*!
+  2D Transformation Matrix v2.7.5
+  (c) Epistemex.com 2014-2018
+  License: MIT
+*/
+
+/*!
+  Copyright (c) 2017 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/
+
+/*!
+  Copyright (c) 2018 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/
+
+/*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+
+/*!
+ * Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ */
+
+/*!
+ * mime-db
+ * Copyright(c) 2014 Jonathan Ong
+ * MIT Licensed
+ */
+
+/*!
+ * mime-types
+ * Copyright(c) 2014 Jonathan Ong
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+/*!
+ * repeat-string <https://github.com/jonschlinkert/repeat-string>
+ *
+ * Copyright (c) 2014-2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+/**
+ * 2D transformation matrix object initialized with identity matrix.
+ *
+ * The matrix can synchronize a canvas 2D context by supplying the context
+ * as an argument, or later apply current absolute transform to an
+ * existing context.
+ *
+ * To synchronize a DOM element you can use [`toCSS()`]{@link Matrix#toCSS} or [`toCSS3D()`]{@link Matrix#toCSS3D}.
+ * together with for example the `style.transform` property.
+ *
+ * @param {CanvasRenderingContext2D} [context] - Optional context to sync with Matrix
+ * @param {HTMLElement} [element=null] - DOM Element to synchronize
+ * @prop {number} a - scale x
+ * @prop {number} b - shear y
+ * @prop {number} c - shear x
+ * @prop {number} d - scale y
+ * @prop {number} e - translate x
+ * @prop {number} f - translate y
+ * @prop {CanvasRenderingContext2D} [context] - set or get current synchronized 2D context
+ * @prop {HTMLElement} [element] - get current synchronized DOM element
+ * @prop {boolean} [useCSS3D=false] - is a DOM element is defined for sync., choose whether to use 2D (false) or 3D (true) matrix to sync it.
+ * @constructor
+ * @license MIT license
+ * @copyright Epistemex.com 2014-2018
+ */
+
+/** @license React v16.13.1
+ * react-is.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+//! moment.js
+
+//! moment.js locale configuration
