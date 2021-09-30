@@ -77,7 +77,7 @@ function Plugin(props) {
     }
     setImages(imageResources);
     // for (const img of imageResources) {
-    //   getRegions(img.src)
+    //   getRegions(img.src) 
     // }
     setSelectedImage(0);
     setStateKey(v4());
