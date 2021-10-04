@@ -43,6 +43,7 @@ function Plugin(props) {
     activeResources,
     projects,
     store,
+    session,
     trigger,
   } = sharedProps;
   const [artefactRegistry, setArtefactRegistry] = useState(null);
@@ -52,6 +53,7 @@ function Plugin(props) {
   const [allowedClasses, setAllowedClasses] = useState([]);
   const [enabledTools, setEnabledTools] = useState([]);
   const [myResources, setMyResources] = useState([]);
+  const [writingResource, setWritingResource] = useState("")
   const project = projects[0];
 
   useEffect(() => {
@@ -68,6 +70,7 @@ function Plugin(props) {
         return {
           src: item.main,
           metadata: item.metadata,
+          artefactRegistry: item.artefactRegistry,
           name: item.main.split("/")[item.main.split("/").length - 1],
           regions: [],
         };
@@ -85,9 +88,9 @@ function Plugin(props) {
   }, [activeResources]);
 
   useEffect(() => {
-    if (getDefaultSession().info.isLoggedIn) {
+    if (session.info.isLoggedIn) {
       getMyArtefactRegistry();
-      setAllowedClasses([...allowedClasses, getDefaultSession().info.webId]);
+      setAllowedClasses([...allowedClasses, session.info.webId]);
       setEnabledTools([
         "select",
         "create-box",
@@ -101,9 +104,70 @@ function Plugin(props) {
     }
   }, [trigger]);
 
+  useEffect(() => {
+    if (images[selectedImage]) {
+      const imgs = images;
+      imgs[selectedImage].regions = [];
+      setImages(imgs);
+      setStateKey(v4());
+    }
+  }, [selectedElements])
   // useEffect(() => {
   //   getRegions(images[selectedImage])
   // }, [selectedImage]);
+
+  async function getAssociatedRegions(image) {
+    const myEngine = newEngine();
+    const regions = []
+    const creators = {}
+
+    for (const art of selectedElements) {
+      const q = `
+      PREFIX lbd: <https://lbdserver.org/vocabulary#> 
+      SELECT ?region WHERE {
+        <${art.global[0]}> lbd:hasLinkElement ?le .
+        ?le lbd:hasIdentifier ?id ;
+            lbd:hasDocument <${image.src}> .
+        ?id lbd:identifier ?region .
+      }`;
+      const results1 = await myEngine.query(q, { sources: [...activeResources.map(e => e.artefactRegistry), artefactRegistry] });
+      const bindings1 = await results1.bindings();
+      bindings1.forEach((item) => {
+        const creator = art.global[0].split("lbd")[0] + "profile/card#me";
+  
+        let color
+        if (!Object.keys(creators).includes(creator)) {
+          color = getRandomColor()
+          creators[creator] = {color}
+        } else {
+          color = creators[creator].color
+        }
+  
+        regions.push({
+          ...JSON.parse(
+            item
+              .get("?region")
+              .id.replaceAll('"', "")
+              .replaceAll("'", '"')
+          ),
+          artefact: art.global[0],
+          cls: creator,
+          color,
+          id: v4(),
+          tags: [art.global[0]],
+          loaded: true,
+        });
+      });
+
+
+    }
+
+    const imgs = images;
+    imgs[selectedImage].regions = regions;
+    setImages(imgs);
+    setAllowedClasses((ca) => [...ca, ...Object.keys(creators)]);
+    setStateKey(v4());
+  }
 
   async function getRegions(image) {
     console.log(`image`, image);
@@ -273,9 +337,9 @@ function Plugin(props) {
   // }
 
   async function getMyArtefactRegistry() {
-    console.log(`getDefaultSession().info.webId`, getDefaultSession().info.webId);
-    const LBDlocation = await getLBDlocation(getDefaultSession().info.webId, getDefaultSession());
-    const projectId = await getProjectId(project, getDefaultSession());
+    console.log(`session.info.webId`, session.info.webId);
+    const LBDlocation = await getLBDlocation(session.info.webId, session);
+    const projectId = await getProjectId(project, session);
     console.log(`LBDlocation`, LBDlocation);
     const ar = LBDlocation + projectId + "/artefactRegistry.ttl";
     setArtefactRegistry(ar);
@@ -319,7 +383,7 @@ function Plugin(props) {
             ).replaceAll('"', "'")}" .
         }`;
 
-            await update(query, artefactRegistry, getDefaultSession());
+            await update(query, artefactRegistry, session);
 
             store.addQuad(
               namedNode(artefactRegistry + `#${zoneId}`),
@@ -339,9 +403,26 @@ function Plugin(props) {
             store.addQuad(
               namedNode(artefactRegistry + `#${identifier}`),
               namedNode(`https://lbdserver.org/vocabulary#identifier`),
-              Literal(JSON.stringify(region).replaceAll('"', "'"))
+              literal(JSON.stringify(region).replaceAll('"', "'"))
             );
+
+          if (selectedElements.length > 0) {
+            for (const elem of selectedElements) {
+              const q = `
+              PREFIX lbd: <https://lbdserver.org/vocabulary#> 
+              PREFIX owl: <http://www.w3.org/2002/07/owl#>
+              INSERT DATA {
+                <#${zoneId}> owl:sameAs <${elem.global[0]}> .
+                <${elem.global[0]}> owl:sameAs <#${zoneId}> .
+              }`;
+      
+                  await update(q, artefactRegistry, session);
+                }
+            }
+
+
           }
+
 
           // switch (region.cls) {
           //   case "Building Element":
@@ -405,19 +486,19 @@ function Plugin(props) {
     inst:identifier_${id} a lbd:StringBasedIdentifier; 
       lbd:identifier "${JSON.stringify(region).replaceAll('"', "'")}".
     }`;
-    await update(updateQ, myLinkElement, getDefaultSession());
+    await update(updateQ, myLinkElement, session);
     await notifyGlobalRegistry(
       element,
       [myLinkElement],
       project.global.replace("/profile/card#me", "/data/artefactRegistry.ttl"),
-      getDefaultSession()
+      session
     );
 
     await notifyMetadataOwnerOfNewLinkElementList(
       myLinkElement,
       source.main,
       source.metadata,
-      getDefaultSession()
+      session
     );
   }
 
@@ -482,7 +563,7 @@ function Plugin(props) {
     inst:el_${locEl} dot:hasDamageArea inst:dam_${damId} .
     inst:dam_${damId} a dot:DamageArea, dot:Damage .
     }`;
-    await update(updateQ1, semanticSource.main, getDefaultSession());
+    await update(updateQ1, semanticSource.main, session);
 
     const updateQ2 = `
     PREFIX lbd: <https://lbdserver.org/vocabulary#>
@@ -503,13 +584,13 @@ function Plugin(props) {
       inst:id_${id2} a lbd:URIBasedIdentifier ; 
         lbd:identifier <${semanticSource.main}#dam_${damId}> .
     }`;
-    await update(updateQ2, myGraphLinkElement, getDefaultSession());
+    await update(updateQ2, myGraphLinkElement, session);
 
     await notifyGlobalRegistry(
       element,
       [myGraphLinkElement],
       project.global.replace("/profile/card#me", "/data/artefactRegistry.ttl"),
-      getDefaultSession()
+      session
     );
 
     const updateQ3 = `
@@ -527,25 +608,25 @@ function Plugin(props) {
       inst:id_${id3} a lbd:StringBasedIdentifier ;
         lbd:identifier "${JSON.stringify(region).replaceAll('"', "'")}".
     }`;
-    await update(updateQ3, myLinkElement, getDefaultSession());
+    await update(updateQ3, myLinkElement, session);
 
     await notifyGlobalRegistry(
       { global: globalRegistry + `#artefact_${glob}` },
       [myGraphLinkElement, myLinkElement],
       project.global.replace("/profile/card#me", "/data/artefactRegistry.ttl"),
-      getDefaultSession()
+      session
     );
     await notifyMetadataOwnerOfNewLinkElementList(
       [myLinkElement],
       imageSource.main,
       imageSource.metadata,
-      getDefaultSession()
+      session
     );
     await notifyMetadataOwnerOfNewLinkElementList(
       [myGraphLinkElement],
       semanticSource.main,
       semanticSource.metadata,
-      getDefaultSession()
+      session
     );
   }
 
@@ -575,7 +656,6 @@ function Plugin(props) {
       }}
     >
       <StylesProvider generateClassName={generateClassname}>
-        <p>{getDefaultSession().info.webId}</p>
         {/* adapt events via MainLayout module (pass functions via Annotator component) */}
         <ReactImageAnnotate
           key={stateKey}
@@ -592,10 +672,14 @@ function Plugin(props) {
           hideNext={selectedImage < images.length - 1 ? false : true}
           hidePrev={selectedImage === 0 || images.length < 2 ? true : false}
         />
-        <Button onClick={() => getRegions(images[selectedImage])}>
-          Get zones
+        <Button variant="contained" color="primary" onClick={() => getRegions(images[selectedImage])}>
+          Get all zones
         </Button>
-        {/* {getDefaultSession().info.isLoggedIn ? (
+        <Button variant="contained" color="primary" onClick={() => getAssociatedRegions(images[selectedImage])}>
+          Get associated regions
+        </Button>
+
+        {/* {(session.info.isLoggedIn && artefactRegistry && selectedElements.length > 0) ? (
           <FormControl style={{ margin: 20 }}>
             <InputLabel id="demo-simple-select-helper-label">
               Resource
@@ -605,25 +689,21 @@ function Plugin(props) {
               id="demo-simple-select-helper"
               fullWidth
               value={writingResource}
-              onChange={(e) => setMapping(e.target.value)}
+              onChange={(e) => setWritingResource(e.target.value)}
             >
-              {activeResources
-                .filter((res) => {
-                  const mimetype = mime.lookup(res.main);
-                  return mimetype === "text/turtle";
-                })
+              {selectedElements
                 .map((item) => {
                   return (
-                    <MenuItem key={item.main} value={item}>
-                      {item.main}
+                    <MenuItem key={item.global} value={item}>
+                      {item.global}
                     </MenuItem>
                   );
                 })}
             </Select>
             <FormHelperText>
-              RDF resource to save new element creation to
+              Link to element
             </FormHelperText>
-            <Button onClick={() => createGlobalArtefactsFromGltf(project, resource, getDefaultSession())}>Align GUIDs</Button>
+            <Button onClick={() => createGlobalArtefactsFromGltf(project, resource, session)}>Align GUIDs</Button>
           </FormControl>
         ) : (
           <></>
