@@ -124,16 +124,19 @@ function Plugin(props) {
     for (const art of selectedElements) {
       const q = `
       PREFIX lbd: <https://lbdserver.org/vocabulary#> 
-      SELECT ?region WHERE {
+      SELECT DISTINCT ?region WHERE {
         <${art.global[0]}> lbd:hasLinkElement ?le .
         ?le lbd:hasIdentifier ?id ;
             lbd:hasDocument <${image.src}> .
         ?id lbd:identifier ?region .
       }`;
-      const results1 = await myEngine.query(q, { sources: [...activeResources.map(e => e.artefactRegistry), artefactRegistry] });
+
+      const s = [...activeResources.map(e => e.artefactRegistry)]
+      if (artefactRegistry) s.push(artefactRegistry)
+      const results1 = await myEngine.query(q, { sources: s });
       const bindings1 = await results1.bindings();
       bindings1.forEach((item) => {
-        const creator = art.global[0].split("lbd")[0] + "profile/card#me";
+        const creator = art.global[0].split("/lbd/")[0] + "/profile/card#me";
   
         let color
         if (!Object.keys(creators).includes(creator)) {
@@ -180,7 +183,10 @@ function Plugin(props) {
            lbd:hasDocument <${image.src}> .
        ?id lbd:identifier ?region .
      }`;
-    const results1 = await myEngine.query(q, { sources: [store] });
+
+     const s = [...activeResources.map(e => e.artefactRegistry)]
+     if (artefactRegistry) s.push(artefactRegistry)
+    const results1 = await myEngine.query(q, { sources: s });
     const bindings1 = await results1.bindings();
     const creators = {}
     const zones = bindings1.map((item) => {
@@ -672,10 +678,10 @@ function Plugin(props) {
           hideNext={selectedImage < images.length - 1 ? false : true}
           hidePrev={selectedImage === 0 || images.length < 2 ? true : false}
         />
-        <Button variant="contained" color="primary" onClick={() => getRegions(images[selectedImage])}>
+        <Button variant="contained" color="primary" style={{margin: 10}} onClick={() => getRegions(images[selectedImage])}>
           Get all zones
         </Button>
-        <Button variant="contained" color="primary" onClick={() => getAssociatedRegions(images[selectedImage])}>
+        <Button variant="contained" color="primary" style={{margin: 10}} onClick={() => getAssociatedRegions(images[selectedImage])}>
           Get associated regions
         </Button>
 
