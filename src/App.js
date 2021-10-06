@@ -131,9 +131,7 @@ function Plugin(props) {
         ?id lbd:identifier ?region .
       }`;
 
-      const s = [...activeResources.map(e => e.artefactRegistry)]
-      if (artefactRegistry) s.push(artefactRegistry)
-      const results1 = await myEngine.query(q, { sources: s });
+      const results1 = await myEngine.query(q, { sources: [store] });
       const bindings1 = await results1.bindings();
       bindings1.forEach((item) => {
         const creator = art.global[0].split("/lbd/")[0] + "/profile/card#me";
@@ -173,7 +171,6 @@ function Plugin(props) {
   }
 
   async function getRegions(image) {
-    console.log(`image`, image);
     const myEngine = newEngine();
     const q = `
      PREFIX lbd: <https://lbdserver.org/vocabulary#> 
@@ -184,9 +181,7 @@ function Plugin(props) {
        ?id lbd:identifier ?region .
      }`;
 
-     const s = [...activeResources.map(e => e.artefactRegistry)]
-     if (artefactRegistry) s.push(artefactRegistry)
-    const results1 = await myEngine.query(q, { sources: s });
+    const results1 = await myEngine.query(q, { sources: [store] });
     const bindings1 = await results1.bindings();
     const creators = {}
     const zones = bindings1.map((item) => {
@@ -216,7 +211,7 @@ function Plugin(props) {
         loaded: true,
       };
     });
-    console.log(`zones`, zones);
+
     const imgs = images;
     imgs[selectedImage].regions = zones;
     setImages(imgs);
@@ -262,7 +257,7 @@ function Plugin(props) {
         return { document: item.get("?source").id, id: item.get("?id").id };
       });
 
-      console.log(`sourceWithId`, sourceWithId);
+
       // do the actual "semantic query" => if this becomes a generic function, this is the most important one ;)
       const damages = [];
       for (const data of sourceWithId) {
@@ -279,8 +274,8 @@ function Plugin(props) {
           .forEach((item) => damages.push({ item, source: data.document }));
       }
 
-      console.log(`damages`, damages);
 
+      
       // find global artefact for each damage
       const globalDamages = [];
       for (const damage of damages) {
@@ -343,10 +338,10 @@ function Plugin(props) {
   // }
 
   async function getMyArtefactRegistry() {
-    console.log(`session.info.webId`, session.info.webId);
+
     const LBDlocation = await getLBDlocation(session.info.webId, session);
     const projectId = await getProjectId(project, session);
-    console.log(`LBDlocation`, LBDlocation);
+
     const ar = LBDlocation + projectId + "/artefactRegistry.ttl";
     setArtefactRegistry(ar);
   }
@@ -355,11 +350,11 @@ function Plugin(props) {
 
   async function saveAll(e) {
     if (artefactRegistry) {
-      console.log(`artefactRegistry`, artefactRegistry);
+
       for (const image of e.images) {
         for (const region of image.regions) {
           if (!region.loaded) {
-            console.log(`region`, region);
+
             const type = region.type;
             let saveString;
             if (type === "box") {
