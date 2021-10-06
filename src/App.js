@@ -171,52 +171,58 @@ function Plugin(props) {
   }
 
   async function getRegions(image) {
-    const myEngine = newEngine();
-    const q = `
-     PREFIX lbd: <https://lbdserver.org/vocabulary#> 
-     SELECT ?region ?artefact WHERE {
-       ?artefact lbd:hasLinkElement ?le .
-       ?le lbd:hasIdentifier ?id ;
-           lbd:hasDocument <${image.src}> .
-       ?id lbd:identifier ?region .
-     }`;
+    try {
+      const myEngine = newEngine();
+      const q = `
+       PREFIX lbd: <https://lbdserver.org/vocabulary#> 
+       SELECT ?region ?artefact WHERE {
+         ?artefact lbd:hasLinkElement ?le .
+         ?le lbd:hasIdentifier ?id ;
+             lbd:hasDocument <${image.src}> .
+         ?id lbd:identifier ?region .
+       }`;
+  
+      const results1 = await myEngine.query(q, { sources: [store] });
+      const bindings1 = await results1.bindings();
+      console.log(`bindings1`, bindings1)
+      const creators = {}
+      const zones = bindings1.map((item) => {
+        const artefact = item.get("?artefact").id
+        const creator = artefact.split("lbd")[0] + "profile/card#me";
+  
+        let color
+        if (!Object.keys(creators).includes(creator)) {
+          color = getRandomColor()
+          creators[creator] = {color}
+        } else {
+          color = creators[creator].color
+        }
+  
+        return {
+          ...JSON.parse(
+            item
+              .get("?region")
+              .id.replaceAll('"', "")
+              .replaceAll("'", '"')
+          ),
+          artefact,
+          cls: creator,
+          color,
+          id: v4(),
+          tags: [artefact],
+          loaded: true,
+        };
+      });
+  
+      const imgs = images;
+      imgs[selectedImage].regions = zones;
+      setImages(imgs);
+      setAllowedClasses((ca) => [...ca, ...Object.keys(creators)]);
+      setStateKey(v4());
+    } catch (error) {
+      console.log(`error in imageAnnotator - get associated regions`, error)
+    }
 
-    const results1 = await myEngine.query(q, { sources: [store] });
-    const bindings1 = await results1.bindings();
-    const creators = {}
-    const zones = bindings1.map((item) => {
-      const artefact = item.get("?artefact").id
-      const creator = artefact.split("lbd")[0] + "profile/card#me";
-
-      let color
-      if (!Object.keys(creators).includes(creator)) {
-        color = getRandomColor()
-        creators[creator] = {color}
-      } else {
-        color = creators[creator].color
-      }
-
-      return {
-        ...JSON.parse(
-          item
-            .get("?region")
-            .id.replaceAll('"', "")
-            .replaceAll("'", '"')
-        ),
-        artefact,
-        cls: creator,
-        color,
-        id: v4(),
-        tags: [artefact],
-        loaded: true,
-      };
-    });
-
-    const imgs = images;
-    imgs[selectedImage].regions = zones;
-    setImages(imgs);
-    setAllowedClasses((ca) => [...ca, ...Object.keys(creators)]);
-    setStateKey(v4());
   }
 
   function getRandomColor() {
