@@ -1,10 +1,10 @@
 import {atom} from 'recoil'
-import {Session} from "@inrupt/solid-client-authn-browser"
+import {Session, getDefaultSession} from "@inrupt/solid-client-authn-browser"
 const N3 = require("n3");
 
 const session = atom({
     key: "session",
-    default: new Session()
+    default: getDefaultSession()
 })
 
 
@@ -16,12 +16,12 @@ const store = atom({
 
 const projects = atom({
     key: "projects",
-    default: ["http://localhost:5000/jeroen/lbd/642f0417-ce23-4d9d-8806-c078aed93ae1/"]
+    default: ["https://pod.lbdserver.org/arch/lbd/duplex/"]
 })
 
-const activeResources = atom({
+const datasets = atom({
     key: "activeResources",
-    default: [{main: "http://localhost:5000/pieter/lbd/642f0417-ce23-4d9d-8806-c078aed93ae1/damage.jpeg", meta: "http://localhost:5000/pieter/lbd/642f0417-ce23-4d9d-8806-c078aed93ae1/damage.jpeg.props.ttl"}]
+    default: ["https://pod.lbdserver.org/arch/lbd/duplex/local/datasets/v5AZVWtMdrcoC7CVmHY5KA/24eaXy15hhPM89ngqx6YAm"]
 })
 
 const selectedElements = atom({
@@ -39,4 +39,4 @@ const trigger = atom({
     default: '0'
 })
 
-export {session, projects, activeResources, selectedElements, selectionId, trigger, store}
+export {session, projects, datasets, selectedElements, selectionId, trigger, store}
