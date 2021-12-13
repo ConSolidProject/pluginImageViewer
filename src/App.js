@@ -65,7 +65,7 @@ function Plugin(props) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [stateKey, setStateKey] = useState(v4());
   const [allowedClasses, setAllowedClasses] = useState([
-    "DamageArea",
+    // "DamageArea",
     "Element",
   ]);
   const [enabledTools, setEnabledTools] = useState([]);
@@ -319,7 +319,7 @@ function Plugin(props) {
         height: module.dimensions.h - 100,
       }}
     >
-      <form>
+      {/* <form>
         <label for="cars">Dataset for Damage Registration: </label>
         <select
           name="cars"
@@ -346,14 +346,22 @@ function Plugin(props) {
       ) : (
         <></>
       )}
-      <br />
+      <br /> */}
       {/* adapt events via MainLayout module (pass functions via Annotator component) */}
       <ReactImageAnnotate
+      // hideSave={true}
+      // hideSettings={true}
+      // hideFullScreen={true}
+      // hideClone={true}
+      hideHeader={true}
+      enabledTools={[]}
+
         key={stateKey}
         selectedImage={selectedImage}
         onSelectRegion={(e) => console.log("region", e)}
         images={images}
         regionClsList={allowedClasses}
+        
         showTags={true}
         onExit={(e) => saveAll(e)}
         allowComments={true}
